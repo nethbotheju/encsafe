@@ -2,6 +2,8 @@ package com.encsafe.app;
 
 import java.util.Arrays;
 import java.util.List;
+import java.io.File;
+import java.util.Scanner;
 
 public class App {
     public static void main(String[] args) {
@@ -36,10 +38,73 @@ public class App {
                 System.out.println("\u001B[32mEncSafe CLI Tool\u001B[0m");
                 System.out.println("\u001B[32mDeveloped by: nethbotheju\u001B[0m");
                 System.out.println("\u001B[34mFor more details, visit: https://github.com/nethbotheju/encsafe\u001B[0m");
-
             }else{
                 System.err.println("[\u001B[31mERROR\u001B[0m] \u001B[33mInvalid Arguments\u001B[0m: Please provide the necessary inputs to proceed. If you need help, use the 'help' command to see the required arguments.");
             }
+        }else if(args.length == 2){
+            String arg0 = args[0];
+            List<String> encList = Arrays.asList("-enc", "--enc", "enc", "encrypt");
+            List<String> decList = Arrays.asList("-dec", "--dec", "dec", "decrypt");
+            if(encList.contains(arg0.toLowerCase())){
+                if(isFileExists(args[1])){
+                    String password = getPassword("Enter the password for encryption (minimum 4 characters): "); 
+                    encryption(args[1], password);
+                }else{
+                    System.err.println("[\u001B[31mERROR\u001B[0m] \u001B[33mInvalid File Path\u001B[0m: The specified file path is not valid. Please ensure the file exists and the path is correct.");
+                }
+            }else if(decList.contains(arg0.toLowerCase())){
+                if(isFileExists(args[1])){
+                    if(isFileExtention(args[1])){
+                        String password = getPassword("Enter the password for decryption (must be the same as used during encryption, minimum 4 characters): "); 
+                        decryption(args[1], password);
+                    }else{
+                        System.err.println("[\u001B[31mERROR\u001B[0m] \u001B[33mInvalid File\u001B[0m: The specified file does not have a `.encsafe` extension. Please provide a valid .encsafe file for decryption.");
+                    }
+                    
+                }else{
+                    System.err.println("[\u001B[31mERROR\u001B[0m] \u001B[33mInvalid File Path\u001B[0m: The specified file path is not valid. Please ensure the file exists and the path is correct.");
+                }
+            }else{
+                System.err.println("[\u001B[31mERROR\u001B[0m] \u001B[33mInvalid Arguments\u001B[0m: Please provide the necessary inputs to proceed. If you need help, use the 'help' command to see the required arguments.");
+            }
+        }else{
+            System.err.println("[\u001B[31mERROR\u001B[0m] \u001B[33mInvalid Arguments\u001B[0m: Please provide the necessary inputs to proceed. If you need help, use the 'help' command to see the required arguments.");
         }
+    }
+
+    private static Boolean isFileExists(String filePath){
+        File file = new File(filePath);
+        return file.exists();
+    }
+
+    private static Boolean isFileExtention(String filePath){
+        int i = filePath.lastIndexOf('.');
+        if (i > 0) {
+            String extension = filePath.substring(i);
+            return extension.equalsIgnoreCase(".encsafe");
+        }
+        return false;
+    }
+
+    private static String getPassword(String msg){
+        Scanner scan = new Scanner(System.in);
+        System.out.print(msg);
+
+        String userInput;
+        while((userInput = scan.nextLine()).length() < 4){
+            System.err.println("[\u001B[33mWARNING\u001B[0m] \u001B[33mWeak Password\u001B[0m: The provided password is too weak. Please ensure the password is at least 4 characters long for encryption.");
+            System.out.print(msg);
+        }
+
+        scan.close();
+        return userInput;
+    }
+
+    private static void encryption(String filePath, String password){
+
+    }
+
+    private static void decryption(String filePath, String password){
+
     }
 }
