@@ -3,7 +3,20 @@ package com.encsafe.app;
 import java.util.Arrays;
 import java.util.List;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.security.SecureRandom;
+import java.security.spec.KeySpec;
 import java.util.Scanner;
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.file.Paths;
+import java.nio.file.Files;
+import java.io.UnsupportedEncodingException;
 
 public class App {
     public static void main(String[] args) {
@@ -101,7 +114,98 @@ public class App {
     }
 
     private static void encryption(String filePath, String password){
+        // Generate random salt and IV
+        byte[] salt = new byte[16];
+        byte[] iv = new byte[16];
 
+        SecureRandom random = new SecureRandom();
+        random.nextBytes(salt);
+        random.nextBytes(iv);
+
+        // Derive the AES encryption key from the password + salt
+        SecretKeySpec secretKey = null;
+        try{
+            SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+            KeySpec spec = new PBEKeySpec(password.toCharArray(), salt, 65536, 256);
+            SecretKey tmp = factory.generateSecret(spec);
+            secretKey = new SecretKeySpec(tmp.getEncoded(), "AES");
+        }catch(Exception e){
+            System.err.println("[\u001B[31mERROR\u001B[0m] \u001B[33mFailed to derive AES encryption key\u001B[0m: " + e.getMessage());
+            return;
+        }
+
+
+        // Read original file as bytes
+        byte[] originalBytes = null;
+        try{
+            originalBytes = Files.readAllBytes(Paths.get(filePath));
+        }catch(IOException e){
+            System.err.println("[\u001B[31mERROR\u001B[0m] \u001B[33mFailed to read original file\u001B[0m: " + e.getMessage());
+            return;
+        }
+
+        // Encrypt using AES with the IV
+        byte[] encryptedBytes = null;
+        try{
+            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            cipher.init(Cipher.ENCRYPT_MODE, secretKey, new IvParameterSpec(iv));
+            encryptedBytes = cipher.doFinal(originalBytes);
+        }catch(Exception e){
+            System.err.println("[\u001B[31mERROR\u001B[0m] \u001B[33mFailed to encrypt the file bytes\u001B[0m: " + e.getMessage());
+            return;
+        }
+
+        // Extract the fileName, fileName without extension and parent directory
+        File originalFile = new File(filePath);
+        String originalFileName = originalFile.getName();
+        String parentDirectory = originalFile.getParent();
+
+        int dotIndex = originalFileName.lastIndexOf('.');
+        String fileNameWithoutExt;
+        if(dotIndex > 0){
+            fileNameWithoutExt = originalFileName.substring(0, dotIndex);
+        }else{
+            fileNameWithoutExt = originalFileName;
+        }
+
+        // Create full path for encrypted file
+        String fileName;
+        if (parentDirectory != null) {
+            fileName = parentDirectory + File.separator + fileNameWithoutExt + ".encsafe";
+        } else {
+            fileName = fileNameWithoutExt + ".encsafe";
+        }
+
+        // Convert fileName to byte array
+        byte[] originalFileNameBytes = null;
+        try{
+            originalFileNameBytes = originalFileName.getBytes("UTF-8");
+        }catch(UnsupportedEncodingException e){
+            System.err.println("[\u001B[31mERROR\u001B[0m] \u001B[33mFailed to convert file name to UTF-8 byte array\u001B[0m: " + e.getMessage());
+            return;
+        }
+        
+        // Get the fileName byte array length
+        int originalFileNameLength = originalFileNameBytes.length;
+        if(originalFileNameLength > 65535 || originalFileNameLength < 0){
+            System.err.println("[\u001B[31mERROR\u001B[0m] \u001B[33mInvalid original file name length\u001B[0m: " + originalFileNameLength + ". Must be between 0 and 65535.");
+            return;
+        }
+
+        // Save salt + IV + encrypted data into a new file
+        try(FileOutputStream fos = new FileOutputStream(fileName)){
+            fos.write(salt);
+            fos.write(iv);
+            fos.write((originalFileNameLength >>> 8) & 0xFF);  // Write high byte
+            fos.write(originalFileNameLength & 0xFF);         // Write low byte
+            fos.write(originalFileNameBytes);
+            fos.write(encryptedBytes);
+        }catch(IOException e){
+            System.err.println("[\u001B[31mERROR\u001B[0m] \u001B[33mFailed to write encrypted data to file\u001B[0m: " + e.getMessage());
+            return;
+        }
+
+        System.out.println("\n[\u001B[32mSUCCESS\u001B[0m] File encrypted and saved successfully to: " + fileName);
     }
 
     private static void decryption(String filePath, String password){
