@@ -209,6 +209,69 @@ public class App {
     }
 
     private static void decryption(String filePath, String password){
+        // Read encrypted file bytes
+        byte[] fileBytes = null;
+        try{
+            fileBytes = Files.readAllBytes(Paths.get(filePath));
+        }catch(IOException e){
+            System.err.println("[\u001B[31mERROR\u001B[0m] \u001B[33mFailed to read encrypted file\u001B[0m: " + e.getMessage());
+            return;
+        }
 
+        // Extract the data from the fileBytes
+        byte[] salt = Arrays.copyOfRange(fileBytes, 0, 16);
+        byte[] iv = Arrays.copyOfRange(fileBytes, 16, 32);
+        int fileNameLength = ((fileBytes[32] & 0xFF) << 8) | (fileBytes[33] & 0xFF);
+        byte[] fileNameBytes = Arrays.copyOfRange(fileBytes, 34, 34 + fileNameLength);
+        byte[] encryptedBytes = Arrays.copyOfRange(fileBytes, 34 + fileNameLength, fileBytes.length);
+
+        // Derive the AES decryption key from the password + salt
+        SecretKeySpec secretKey = null;
+        try{
+            SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+            KeySpec spec = new PBEKeySpec(password.toCharArray(), salt, 65536, 256);
+            SecretKey tmp = factory.generateSecret(spec);
+            secretKey = new SecretKeySpec(tmp.getEncoded(), "AES");
+        }catch(Exception e){
+            System.err.println("[\u001B[31mERROR\u001B[0m] \u001B[33mFailed to derive AES decryption key\u001B[0m: " + e.getMessage());
+            return;
+        }
+
+        // Decrypt using AES with the IV
+        byte[] originalBytes = null;
+        try{
+            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            cipher.init(Cipher.DECRYPT_MODE, secretKey, new IvParameterSpec(iv));
+            originalBytes = cipher.doFinal(encryptedBytes);
+        }catch(Exception e){
+            System.err.println("[\u001B[31mERROR\u001B[0m] \u001B[33mFailed to decrypt the file bytes\u001B[0m: " + e.getMessage());
+            return;
+        }
+
+        // Convert filName bytes to utf-8 string
+        String fileName = null;
+        try{
+          fileName = new String(fileNameBytes, "UTF-8");
+        }catch(UnsupportedEncodingException e){
+            System.err.println("[\u001B[31mERROR\u001B[0m] \u001B[33mFailed to convert file name bytes to string\u001B[0m: " + e.getMessage());
+            return;
+        }
+        
+        // Extract the encrypted file parent directory and merge it to the file name
+        String parentDirectory = new File(filePath).getParent();
+        String fullFileName = null;
+        if(parentDirectory != null){
+            fullFileName = parentDirectory + File.separator + fileName;
+        }else{
+            fullFileName = fileName;
+        }
+
+        // Save the decrypted data into a file
+        try {
+            Files.write(Paths.get(fullFileName), originalBytes);
+            System.out.println("\n[\u001B[32mSUCCESS\u001B[0m] File decrypted and saved successfully to: " + fullFileName);
+        } catch(IOException e) {
+            System.err.println("[\u001B[31mERROR\u001B[0m] \u001B[33mFailed to write decrypted data to file\u001B[0m: " + e.getMessage());
+        }
     }
 }
