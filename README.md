@@ -4,11 +4,15 @@
 
 Using **AES (Advanced Encryption Standard)** encryption, EncSafe provides a highly secure method for protecting your sensitive files.
 
+---
+
 ## Features
 
 - **AES Encryption**: Uses AES to ensure a high level of security for file encryption.
 - **Password Protection**: Encrypted files can only be decrypted with the correct password, preventing unauthorized access.
 - **CLI Tool**: Lightweight and easy-to-use command-line tool for file encryption and decryption.
+
+---
 
 ## Usage
 
@@ -39,21 +43,27 @@ encsafe dec <file_path>
 Replace `<file_path>` with the path to your file.  
 After that, the application will prompt you to enter the password.
 
+---
+
 ## Installation
 
-1. Clone the repository:
+Precompiled versions of the EncSafe CLI are available for **macOS** and **Windows**.
 
-```bash
-git clone https://github.com/nethbotheju/encsafe.git
-```
+### **macOS Installation:**
 
-2. Navigate to the project directory:
+1. Download the `encsafe` executable from the [Releases Page](https://github.com/nethbotheju/encsafe/releases).
+2. Move the downloaded file to a directory of your choice.
+3. Add the directory to your system’s `PATH` for easy access.
+4. You can now use `encsafe` from the terminal.
 
-```bash
-cd encsafe
-```
+### **Windows Installation:**
 
-3. Install dependencies and build the application (instructions may vary depending on the language and build system used).
+1. Download the `encsafe.exe` executable from the [Releases Page](https://github.com/nethbotheju/encsafe/releases).
+2. Move `encsafe.exe` to a directory of your choice.
+3. Add the directory to your system’s `PATH`.
+4. You can now use `encsafe` from the Command Prompt or PowerShell.
+
+---
 
 ## Security
 
