@@ -7,6 +7,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.SecureRandom;
 import java.security.spec.KeySpec;
+import java.security.InvalidKeyException;
+import javax.crypto.BadPaddingException;
 import java.util.Scanner;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -22,8 +24,7 @@ public class App {
     public static void main(String[] args) {
         if(args.length == 0){
             System.err.println("[\u001B[31mERROR\u001B[0m] \u001B[33mMissing Arguments\u001B[0m: Please provide the necessary inputs to proceed. If you need help, use the 'help' command to see the required arguments.");
-        }
-        if(args.length == 1 ){
+        }else if(args.length == 1 ){
             String arg0 = args[0];
             List<String> helpList = Arrays.asList("-h", "--h", "help", "--help");
             List<String> versionList = Arrays.asList("-v", "--v", "version", "--version");
@@ -243,6 +244,9 @@ public class App {
             Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
             cipher.init(Cipher.DECRYPT_MODE, secretKey, new IvParameterSpec(iv));
             originalBytes = cipher.doFinal(encryptedBytes);
+        }catch(InvalidKeyException | BadPaddingException e){
+            System.err.println("[\u001B[31mERROR\u001B[0m] \u001B[33mDecryption failed\u001B[0m: The provided password is incorrect or the key is invalid.");
+            return;
         }catch(Exception e){
             System.err.println("[\u001B[31mERROR\u001B[0m] \u001B[33mFailed to decrypt the file bytes\u001B[0m: " + e.getMessage());
             return;
