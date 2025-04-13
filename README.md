@@ -73,3 +73,10 @@ It includes additional security features:
 - **Initialization Vector (IV)**: Ensures that even if the same file and password are used, the encrypted output will be different every time.
 
 These features ensure your data is well-protected and resilient against brute-force or pattern-based attacks.
+
+---
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
+You are free to use, modify, and distribute this software in accordance with the terms of the license.
